@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clock Remote Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .status {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        button:active {
+            background-color: #0056b3;
+        }
+        button.disabled {
+            background-color: #ccc;
+        }
+        .status-item {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="status">
+        <h2>Clock Status</h2>
+        <div id="statusDisplay">
+            Loading...
+        </div>
+    </div>
+    
+    <div class="controls">
+        <h2>Radio controls</h2>
+        <button onclick="toggleSetting('next')">Next Station</button>
+        <button onclick="toggleSetting('running')">Stop/Resume</button>
+        <h2>Move to</h2>
+        <button onclick="toggleSetting('clock')">Clock</button>
+        <button onclick="toggleSetting('news')">News</button>
+        <button onclick="toggleSetting('radio')">Radio</button>
+        <button onclick="toggleSetting('alarm')">Alarm</button>
+        <button onclick="toggleSetting('trains')">Trains</button>
+        <button onclick="toggleSetting('weather')">Weather</button>
+        <button onclick="toggleSetting('restart')">Restart</button>
+    </div>
+
+    <script>
+        function updateStatus() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusHTML = `
+                        <div class="status-item">Time: ${data.time}</div>
+                        <div class="status-item">Station selected: ${data.station}</div>
+                        <div class="status-item">${data.track}</div>
+                    `;
+                    document.getElementById('statusDisplay').innerHTML = statusHTML;
+                });
+        }
+
+        function toggleSetting(setting) {
+            const endpoints = {
+                'next': '/api/next_station',
+                'running': '/api/toggle_running',
+                'clock': '/api/set_clock',
+                'news': '/api/set_news',
+                'radio': '/api/set_radio',
+                'alarm': '/api/set_alarm',
+                'trains': '/api/set_trains',
+                'weather': '/api/set_weather',
+                'restart': '/api/restart',
+            };
+
+            fetch(endpoints[setting], {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateStatus();
+            });
+        }
+
+        // Update status every 2 seconds
+        updateStatus();
+        setInterval(updateStatus, 2000);
+    </script>
+</body>
+</html>
