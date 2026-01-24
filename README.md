@@ -19,9 +19,6 @@ You will also need an api key for:
 
 You will then need to put those API keys in the relevant places in config.toml file (see doc later)
 
-## Icons for weather
-The icons for the weather are not included (not sure about the copyright)
-To get them run the `fetch_icons.sh` script in the `icons` directory
 
 ## Start at runtime
 There is a `start.sh` script that can be used to make the clock start at runtime.
