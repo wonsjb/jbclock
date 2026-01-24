@@ -5,7 +5,7 @@ Runs on a raspberry pi (raspbian).
 You will need to apt-get a few dependency as pip install does not really works for some of the dependencies
 
 ```
-sudo apt install python3-tomli-w python3-tomli python3-pandas python3-zeep python3-vlc python3-pyqt5 python3-pyaudio
+sudo apt install python3-tomli-w python3-tomli python3-pandas python3-zeep python3-vlc python3-pyqt5 python3-pyaudio python3-opencv libatlas-base-dev
 ```
 
 (maybe others ?)
@@ -21,7 +21,7 @@ You will then need to put those API keys in the relevant places in config.toml f
 
 ## Icons for weather
 The icons for the weather are not included (not sure about the copyright)
-To get them run the `fectch_icons.sh` script in the `icons` directory
+To get them run the `fetch_icons.sh` script in the `icons` directory
 
 ## Start at runtime
 There is a `start.sh` script that can be used to make the clock start at runtime.
@@ -35,11 +35,13 @@ Exec=<location of the start.sh file>
 ```
 After this, the clock will start at runtime. Delete the file if you want to get back to being able to use the pi for some other use.
 
+Logs are stored in `/var/log/JbClock/logs.log`. Ensure the user has permission to write to this directory or run with sufficient privileges.
+
 There is a `restart.sh` file if you want to restart the clock (in case you made change to the code or the config)
 
 
 ## Remote control
-The Clock will open port 5000 with a minimal website you can connect via http. It allows to remote control the clock(change radio, restart it, choose the screen being displayed ...)
+The Clock will open port 5000 with a modern, responsive website you can connect via http. It allows to remote control the clock (change radio, restart it, choose the screen being displayed, view webcam...).
 
 
 ## config file
@@ -54,6 +56,7 @@ The Smart Clock is a versatile digital clock that provides multiple features to 
 - News headlines from various sources
 - Real-time train departure information
 - Weather forecast information
+- **New!** Live Webcam feed (RTSP)
 
 This guide explains how to configure your Smart Clock through the `config.toml` file.
 
@@ -146,6 +149,17 @@ api_key="your-weather-api-key"
 - Enter your location as https://openweathermap.org would accept it
 - You'll need to obtain an API key from https://api.openweathermap.org
 
+### Webcam Configuration
+Configure your IP camera or NVR stream.
+
+```toml
+[webcam]
+enabled = true
+url = "rtsp://username:password@192.168.1.xxx:554/stream_path"
+```
+- Supports RTSP streams (common with Reolink, Hikvision, etc.)
+- Set `enabled = false` to hide the Webcam button
+
 ## Tips and Best Practices
 
 ### Alarm Settings
@@ -223,7 +237,8 @@ SmartClock (main.py)
     │   ├── RadioManager
     │   ├── TrainManager
     │   ├── WeatherWidget
-    │   └── AlarmManager
+    │   ├── AlarmManager
+    │   └── WebcamManager
     └── Web Server
 ```
 
@@ -261,6 +276,11 @@ SmartClock (main.py)
    - Audio generation using PyAudio
    - Supports weekday/weekend schedules
    - Volume control and timing management
+
+6. **webcam.py**
+   - RTSP stream handling using OpenCV
+   - Frame capture and conversion for PyQt
+   - Automatic thread management (starts/stops with view)
 
 ### Supporting Files (Not Shown in Provided Code)
 - **config.py**: Configuration management using TOML
@@ -376,6 +396,8 @@ update_interval = 5
 - Flask: Remote control server
 - PyAudio: Sound generation
 - Numpy: Audio processing
+- OpenCV: Video stream processing
+- Zeep: SOAP client for train API
 - Zeep: SOAP client for train API
 - Various news/weather APIs
 

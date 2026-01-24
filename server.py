@@ -46,6 +46,11 @@ def set_weather():
     app.window.set_weather()
     return jsonify({'result': 'ok'})
 
+@app.route('/api/set_webcam', methods=['POST'])
+def set_webcam():
+    app.window.set_webcam()
+    return jsonify({'result': 'ok'})
+
 @app.route('/api/toggle_running', methods=['POST'])
 def toggle_running():
     is_running = app.window.play_pause()

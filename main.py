@@ -11,6 +11,7 @@ from server import start_server
 from config import SmartClockConfig
 from weather_widget import WeatherWidget
 from alarm import AlarmManager
+from webcam import WebcamManager
 
 
 class SmartClock(QtWidgets.QMainWindow):
@@ -24,6 +25,7 @@ class SmartClock(QtWidgets.QMainWindow):
     set_weather_signal = pyqtSignal()
     play_pause_signal = pyqtSignal()
     next_station_signal = pyqtSignal()
+    set_webcam_signal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -43,6 +45,7 @@ class SmartClock(QtWidgets.QMainWindow):
         self.alarm_manager = AlarmManager(self.config)
         self.train_manager = TrainManager(self.config, self.trainsHeaderLabel, self.trainsLayout)
         self.news_manager = NewsManager(self.config, self.newsHeaderLabel, self.newsLayout)
+        self.webcam_manager = WebcamManager(self.config, self.webcamDisplay)
 
         # Initialize UI elements
         self._setup_ui_elements()
@@ -73,6 +76,7 @@ class SmartClock(QtWidgets.QMainWindow):
         self.alarmButton.clicked.connect(self._set_alarm)
         self.trainsButton.clicked.connect(self._set_trains)
         self.weatherButton.clicked.connect(self._set_weather)
+        self.webcamButton.clicked.connect(self._set_webcam)
 
 
         # Radio controls
@@ -96,6 +100,7 @@ class SmartClock(QtWidgets.QMainWindow):
         self.set_alarm_signal.connect(self._set_alarm)
         self.set_trains_signal.connect(self._set_trains)
         self.set_weather_signal.connect(self._set_weather)
+        self.set_webcam_signal.connect(self._set_webcam)
         self.play_pause_signal.connect(self._play_pause)
         self.next_station_signal.connect(self._next_radio_station)
 
@@ -117,6 +122,9 @@ class SmartClock(QtWidgets.QMainWindow):
     def set_weather(self):
         self.set_weather_signal.emit()
 
+    def set_webcam(self):
+        self.set_webcam_signal.emit()
+
     def play_pause(self):
         self.play_pause_signal.emit()
 
@@ -132,25 +140,35 @@ class SmartClock(QtWidgets.QMainWindow):
             self.stopAlarmButton.setText("Stop Alarm")
 
     def _set_clock(self):
+        self.webcam_manager.stop()
         self.stackedWidget.setCurrentIndex(0)
 
     def _set_news(self):
+        self.webcam_manager.stop()
         self.stackedWidget.setCurrentIndex(1)
         self.news_manager.update_news()
 
     def _set_radio(self):
+        self.webcam_manager.stop()
         self.stackedWidget.setCurrentIndex(2)
 
     def _set_alarm(self):
+        self.webcam_manager.stop()
         self.stackedWidget.setCurrentIndex(3)
 
     def _set_trains(self):
+        self.webcam_manager.stop()
         self.stackedWidget.setCurrentIndex(4)
         self.train_manager.update_train_status()
 
     def _set_weather(self):
+        self.webcam_manager.stop()
         self.stackedWidget.setCurrentIndex(5)
         self.weatherWidget.fetch_weather()
+
+    def _set_webcam(self):
+        self.stackedWidget.setCurrentIndex(6)
+        self.webcam_manager.start()
 
     def _next_radio_station(self):
         selected = self.radioListWidget.currentRow()
@@ -203,6 +221,7 @@ class SmartClock(QtWidgets.QMainWindow):
             self._set_alarm()
 
     def quit(self):
+        self.webcam_manager.stop()
         self.quit_signal.emit()
 
     def _quit(self):

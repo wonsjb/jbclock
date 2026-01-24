@@ -7,23 +7,12 @@ class RadioPlayer:
         # Initialize VLC instance
         self.instance = vlc.Instance('--no-xlib')
         self.player = self.instance.media_player_new()
-        self.player.audio_set_volume(config.get_radio_volume())
+        self.volume = config.get_radio_volume()
         self.current_station: Optional[str] = None
         self.is_playing = False
         
         # Dictionary of radio stations and their stream URLs
         self.stations: Dict[str, str] = {stream.name: stream.uri for stream in config.get_radio_streams()}
-
-    def add_station(self, name: str, url: str):
-        """Add a new radio station"""
-        self.stations[name] = url
-        self.save_stations()
-
-    def remove_station(self, name: str):
-        """Remove a radio station"""
-        if name in self.stations:
-            del self.stations[name]
-            self.save_stations()
 
     def play(self, station_name: str) -> bool:
         """Play selected radio station"""
@@ -37,6 +26,7 @@ class RadioPlayer:
                 media = self.instance.media_new(url)
                 self.player.set_media(media)
                 self.player.play()
+                self.player.audio_set_volume(self.volume)
                 
                 self.current_station = station_name
                 self.is_playing = True
@@ -67,6 +57,7 @@ class RadioPlayer:
 
     def set_volume(self, volume: int):
         """Set volume (0-100)"""
+        self.volume = volume
         self.player.audio_set_volume(volume)
 
     def get_volume(self) -> int:

@@ -368,6 +368,20 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="webcamPage">
+       <layout class="QVBoxLayout" name="verticalLayout_webcam">
+        <item>
+         <widget class="QLabel" name="webcamDisplay">
+          <property name="text">
+           <string>Connecting to Webcam...</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
     <item>
@@ -448,6 +462,19 @@
          </property>
          <property name="text">
           <string>Weather</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="webcamButton">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Webcam</string>
          </property>
         </widget>
        </item>

@@ -247,6 +247,15 @@ class SmartClockConfig:
             except ValueError:
                 raise ValueError(f"Invalid time format: {time_str}. Use HH:MM format")
 
+    # Webcam Methods
+    def get_webcam_url(self) -> str:
+        """Get webcam RTSP URL."""
+        return self.config.get("webcam", {}).get("url", "")
+
+    def is_webcam_enabled(self) -> bool:
+        """Check if webcam is enabled."""
+        return self.config.get("webcam", {}).get("enabled", False)
+
 def main():
     config = SmartClockConfig("config.toml")
     print(str(config))
