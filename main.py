@@ -11,7 +11,9 @@ from server import start_server
 from config import SmartClockConfig
 from weather_widget import WeatherWidget
 from alarm import AlarmManager
+from alarm import AlarmManager
 from webcam import WebcamManager
+from keypad import KeypadWidget
 
 
 class SmartClock(QtWidgets.QMainWindow):
@@ -46,6 +48,8 @@ class SmartClock(QtWidgets.QMainWindow):
         self.train_manager = TrainManager(self.config, self.trainsHeaderLabel, self.trainsLayout)
         self.news_manager = NewsManager(self.config, self.newsHeaderLabel, self.newsLayout)
         self.webcam_manager = WebcamManager(self.config, self.webcamDisplay)
+        self.keypad_manager = KeypadWidget(self.config)
+        self.stackedWidget.addWidget(self.keypad_manager)
 
         # Initialize UI elements
         self._setup_ui_elements()
@@ -103,6 +107,10 @@ class SmartClock(QtWidgets.QMainWindow):
         self.set_webcam_signal.connect(self._set_webcam)
         self.play_pause_signal.connect(self._play_pause)
         self.next_station_signal.connect(self._next_radio_station)
+        
+        # Keypad signals
+        self.keypad_manager.pin_success.connect(self._on_pin_success)
+        self.keypad_manager.pin_cancelled.connect(lambda: self.stackedWidget.setCurrentIndex(0)) # Go to clock
 
     def set_clock(self):
         self.set_clock_signal.emit()
@@ -122,7 +130,16 @@ class SmartClock(QtWidgets.QMainWindow):
     def set_weather(self):
         self.set_weather_signal.emit()
 
-    def set_webcam(self):
+    def set_webcam(self, bypass_pin=False):
+        # We can't easily pass args through signal without changing signal def.
+        # But wait, self.set_webcam_signal is pyqtSignal().
+        # We need to change the signal definition at class level if we want to pass data?
+        # Or just store state? Storing state is easier for now to avoid breaking changes?
+        # No, let's redefine the signal.
+        # Ideally, we should update the signal definition above.
+        # But for now let's just cheat:
+        # If bypass_pin is True, we set a flag, then emit.
+        self._bypass_pin_once = bypass_pin
         self.set_webcam_signal.emit()
 
     def play_pause(self):
@@ -167,8 +184,28 @@ class SmartClock(QtWidgets.QMainWindow):
         self.weatherWidget.fetch_weather()
 
     def _set_webcam(self):
+        # Check if we should bypass (set by server)
+        bypass = getattr(self, '_bypass_pin_once', False)
+        # Reset flag
+        self._bypass_pin_once = False
+        
+        pin = self.config.get_webcam_pin()
+        
+        if bypass or not pin:
+            self._show_webcam_view()
+        else:
+            # Show keypad
+            self.webcam_manager.stop() # Ensure stopped
+            # Keypad is added at end, index should be 7 (0-6 used)
+            self.stackedWidget.setCurrentWidget(self.keypad_manager)
+            self.keypad_manager.reset()
+
+    def _show_webcam_view(self):
         self.stackedWidget.setCurrentIndex(6)
         self.webcam_manager.start()
+
+    def _on_pin_success(self):
+        self._show_webcam_view()
 
     def _next_radio_station(self):
         selected = self.radioListWidget.currentRow()

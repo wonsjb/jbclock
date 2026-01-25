@@ -256,6 +256,10 @@ class SmartClockConfig:
         """Check if webcam is enabled."""
         return self.config.get("webcam", {}).get("enabled", False)
 
+    def get_webcam_pin(self) -> str:
+        """Get webcam PIN code."""
+        return self.config.get("webcam", {}).get("pin_code", "")
+
 def main():
     config = SmartClockConfig("config.toml")
     print(str(config))

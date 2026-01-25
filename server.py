@@ -48,7 +48,7 @@ def set_weather():
 
 @app.route('/api/set_webcam', methods=['POST'])
 def set_webcam():
-    app.window.set_webcam()
+    app.window.set_webcam(bypass_pin=True)
     return jsonify({'result': 'ok'})
 
 @app.route('/api/toggle_running', methods=['POST'])
