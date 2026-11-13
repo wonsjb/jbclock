@@ -37,5 +37,5 @@ api_key = "<your api key>"
 [webcam]
 enabled = false
 camera_name = "Victor"
-url = "rtsp://<user>:<pass>@<ip:port>/h264Preview_01_sub"
+url = "rtsp://<user>:<pass>@Victor:554/h264Preview_01_sub"
 pin_code = "1234"

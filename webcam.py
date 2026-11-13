@@ -70,7 +70,6 @@ def _get_local_subnet_hosts() -> list[str]:
 
 def discover_camera_ip(
     camera_name: str,
-    current_host: str = "",
     rtsp_port: int = 554,
     username: str = "",
     password: str = "",
@@ -80,8 +79,7 @@ def discover_camera_ip(
 
     Order of discovery:
     1. DNS / mDNS lookup for `<camera_name>`, `<camera_name>.lan`, `<camera_name>.local`.
-    2. Current configured host if reachable.
-    3. Fast parallel TCP scan of port 554 on the local /24 subnet + Reolink API verification.
+    2. Fast parallel TCP scan of port 554 on the local /24 subnet + Reolink API verification.
     """
     candidates: list[str] = []
     if camera_name:
@@ -106,9 +104,6 @@ def discover_camera_ip(
                     return ip
         except OSError:
             continue
-
-    if current_host and _check_tcp_port(current_host, rtsp_port, timeout=0.8):
-        return current_host
 
     # Fallback: scan local /24 subnet for open RTSP port 554
     logger.info("Scanning local subnet for camera %r...", camera_name)
@@ -154,7 +149,7 @@ def _replace_url_host(rtsp_url: str, new_host: str) -> str:
 
 
 class VideoThread(threading.Thread):
-    """Background daemon thread that discovers the camera and captures RTSP frames."""
+    """Background daemon thread that discovers the camera IP at runtime and captures RTSP frames."""
 
     def __init__(self, config: SmartClockConfig) -> None:
         super().__init__(daemon=True)
@@ -174,30 +169,22 @@ class VideoThread(threading.Thread):
             return ""
 
         parsed = urlparse(raw_url)
-        current_host = parsed.hostname or ""
+        configured_host = parsed.hostname or ""
         port = parsed.port or 554
         username = parsed.username or ""
         password = parsed.password or ""
-        camera_name = self.config.get_webcam_camera_name()
+        camera_name = self.config.get_webcam_camera_name() or configured_host
 
         self._set_status(f"Discovering camera '{camera_name}'...")
         discovered_ip = discover_camera_ip(
             camera_name=camera_name,
-            current_host=current_host,
             rtsp_port=port,
             username=username,
             password=password,
         )
 
-        if discovered_ip and discovered_ip != current_host:
-            new_url = _replace_url_host(raw_url, discovered_ip)
-            logger.info("Updated webcam RTSP host: %s -> %s", current_host, discovered_ip)
-            self.config.set_webcam_url(new_url)
-            try:
-                self.config.save_config()
-            except Exception as e:
-                logger.warning("Failed to save discovered webcam IP to config: %s", e)
-            return new_url
+        if discovered_ip:
+            return _replace_url_host(raw_url, discovered_ip)
 
         return raw_url
 
