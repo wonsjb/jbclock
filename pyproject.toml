@@ -1,29 +1,37 @@
 [project]
 name = "jbclock"
-version = "0.1.0"
+version = "0.2.0"
 description = "A versatile digital clock for Raspberry Pi with radio, news, trains, weather, and webcam features."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "PyQt5>=5.15.0",
-    "requests>=2.28.0",
+    "flask>=2.2.0",
+    "numpy>=1.24.0",
+    "opencv-python>=4.6.0",
     "python-vlc>=3.0.0",
-    "python-dateutil>=2.8.2",
-    "newsapi-python>=0.2.6",
-    "beautifulsoup4>=4.9.3",
-    "pygame>=2.0.0",
-    "schedule>=1.1.0",
-    "pytz>=2022.1",
-    "opencv-python",
-    "tomli",
-    "tomli-w"
+    "requests>=2.28.0",
+    "tomli-w>=1.0.0",
+    "zeep>=4.2.0",
 ]
 
 [project.urls]
 "Homepage" = "https://github.com/wons/jbclock"
 
 [tool.setuptools]
-packages = ["."]
+py-modules = [
+    "alarm",
+    "api_news_reader",
+    "config",
+    "keypad",
+    "main",
+    "news",
+    "radio",
+    "rss_news_reader",
+    "server",
+    "trains",
+    "weather_widget",
+    "webcam",
+]
 
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -32,9 +40,3 @@ build-backend = "setuptools.build_meta"
 [project.scripts]
 jbclock = "main:main"
 
-[[tool.uv.index]]
-name = "piwheels"
-url = "https://www.piwheels.org/simple"
-
-[tool.uv.sources]
-PyQt5 = { index = "piwheels" }

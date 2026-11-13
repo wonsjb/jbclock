@@ -5,19 +5,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JbClock Remote</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-primary: #ffffff;
-            --text-secondary: #b0b0b0;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
             --accent-color: #3b82f6;
             --accent-hover: #2563eb;
             --danger-color: #ef4444;
-            --danger-hover: #dc2626;
-            --border-radius: 12px;
-            --transition: all 0.2s ease;
+            --success-color: #22c55e;
+            --border-radius: 14px;
+            --transition: all 0.18s ease;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
@@ -34,38 +39,69 @@
 
         .container {
             width: 100%;
-            max-width: 800px;
+            max-width: 720px;
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 22px;
         }
 
-        /* Status Widget */
         .status-hero {
             background: var(--card-bg);
+            border: 1px solid var(--card-border);
             border-radius: var(--border-radius);
-            padding: 30px;
+            padding: 28px 24px;
             text-align: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.25);
         }
 
         .clock-display {
-            font-size: 3rem;
-            font-weight: 600;
-            margin-bottom: 8px;
+            font-size: 3.4rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
             font-variant-numeric: tabular-nums;
+            line-height: 1.1;
+        }
+
+        .date-display {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-top: 6px;
+        }
+
+        .badges-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #0f172a;
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+        }
+
+        .badge.active {
+            color: #4ade80;
+            border-color: rgba(74, 222, 128, 0.35);
+            background: rgba(34, 197, 94, 0.1);
         }
 
         .now-playing {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #333;
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1px solid var(--card-border);
         }
 
         .station-name {
-            font-size: 1.25rem;
-            color: var(--accent-color);
-            font-weight: 500;
+            font-size: 1.2rem;
+            color: #60a5fa;
+            font-weight: 600;
         }
 
         .track-info {
@@ -74,93 +110,137 @@
             font-size: 0.9rem;
         }
 
-        /* Sections */
         .section {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
 
         .section-title {
             color: var(--text-secondary);
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
             font-weight: 600;
             margin-left: 4px;
         }
 
-        /* Grid Layouts */
         .controls-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px;
         }
 
         .actions-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .card-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .media-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        select {
+            flex: 1;
+            background: #0f172a;
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .volume-row {
+            display: flex;
+            align-items: center;
             gap: 12px;
         }
 
-        /* Buttons */
+        .volume-row input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .volume-val {
+            min-width: 44px;
+            text-align: right;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-secondary);
+        }
+
         button {
             background-color: var(--card-bg);
             color: var(--text-primary);
-            border: 1px solid #333;
-            padding: 20px;
+            border: 1px solid var(--card-border);
+            padding: 16px 14px;
             border-radius: var(--border-radius);
             cursor: pointer;
             font-family: inherit;
-            font-size: 1rem;
-            font-weight: 500;
+            font-size: 0.95rem;
+            font-weight: 600;
             transition: var(--transition);
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
             gap: 8px;
         }
 
         button:hover {
-            background-color: #2a2a2a;
-            transform: translateY(-2px);
-            border-color: #444;
+            background-color: #293548;
+            border-color: #475569;
         }
 
-        button:active {
-            transform: translateY(0);
+        button.active-view {
+            background-color: rgba(59, 130, 246, 0.2);
+            border-color: var(--accent-color);
+            color: #60a5fa;
         }
 
-        /* Variant Buttons */
         .btn-primary {
             background-color: var(--accent-color);
             border-color: var(--accent-color);
+            color: #fff;
         }
 
         .btn-primary:hover {
             background-color: var(--accent-hover);
+            border-color: var(--accent-hover);
         }
 
         .btn-danger {
-            background-color: rgba(239, 68, 68, 0.1);
-            color: var(--danger-color);
-            border-color: rgba(239, 68, 68, 0.2);
+            background-color: rgba(239, 68, 68, 0.12);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.3);
         }
 
         .btn-danger:hover {
-            background-color: rgba(239, 68, 68, 0.2);
+            background-color: rgba(239, 68, 68, 0.22);
             border-color: var(--danger-color);
         }
 
-        /* Responsive */
         @media (max-width: 480px) {
             .clock-display {
-                font-size: 2.5rem;
+                font-size: 2.6rem;
             }
-
-            .container {
-                gap: 20px;
+            .controls-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -168,55 +248,133 @@
 
 <body>
     <div class="container">
-        <!-- Status Widget -->
         <div class="status-hero">
             <div class="clock-display" id="clock">--:--:--</div>
+            <div class="date-display" id="date">Loading...</div>
+            <div class="badges-row">
+                <span class="badge" id="viewBadge">View: clock</span>
+                <span class="badge" id="alarmBadge">Alarms: --</span>
+            </div>
             <div class="now-playing">
-                <div class="station-name" id="station">Unknown Station</div>
-                <div class="track-info" id="track">No track info</div>
+                <div class="station-name" id="station">Radio Stopped</div>
+                <div class="track-info" id="track">Select a station below to listen</div>
             </div>
         </div>
 
-        <!-- Navigation -->
         <div class="section">
-            <div class="section-title">Navigation</div>
+            <div class="section-title">Screen Navigation</div>
             <div class="controls-grid">
-                <button onclick="toggleSetting('clock')">Clock</button>
-                <button onclick="toggleSetting('news')">News</button>
-                <button onclick="toggleSetting('radio')">Radio</button>
-                <button onclick="toggleSetting('alarm')">Alarm</button>
-                <button onclick="toggleSetting('trains')">Trains</button>
-                <button onclick="toggleSetting('weather')">Weather</button>
-                <button onclick="toggleSetting('webcam')">Webcam</button>
+                <button id="nav-clock" onclick="toggleSetting('clock')">🕒 Clock</button>
+                <button id="nav-news" onclick="toggleSetting('news')">📰 News</button>
+                <button id="nav-radio" onclick="toggleSetting('radio')">📻 Radio</button>
+                <button id="nav-alarm" onclick="toggleSetting('alarm')">⏰ Alarm</button>
+                <button id="nav-trains" onclick="toggleSetting('trains')">🚆 Trains</button>
+                <button id="nav-weather" onclick="toggleSetting('weather')">⛅ Weather</button>
+                <button id="nav-webcam" onclick="toggleSetting('webcam')">📹 Webcam</button>
             </div>
         </div>
 
-        <!-- Media Controls -->
         <div class="section">
-            <div class="section-title">Controls</div>
-            <div class="actions-grid">
-                <button class="btn-primary" onclick="toggleSetting('next')">Next Station</button>
-                <button class="btn-primary" onclick="toggleSetting('running')">Play / Pause</button>
+            <div class="section-title">Radio & Audio Controls</div>
+            <div class="card-panel">
+                <div class="actions-grid">
+                    <button class="btn-primary" id="playPauseBtn" onclick="toggleSetting('running')">Play / Stop</button>
+                    <button onclick="toggleSetting('next')">Next Station ⏭</button>
+                </div>
+                <div class="media-row">
+                    <select id="stationSelect" onchange="playSelectedStation()">
+                        <option value="">-- Choose Station --</option>
+                    </select>
+                </div>
+                <div class="volume-row">
+                    <span>🔊</span>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="50" oninput="onVolumeInput(this.value)" onchange="sendVolume(this.value)">
+                    <span class="volume-val" id="volumeVal">50%</span>
+                </div>
             </div>
         </div>
 
-        <!-- System -->
         <div class="section">
             <div class="section-title">System</div>
-            <button class="btn-danger" onclick="toggleSetting('restart')">Restart Application</button>
+            <button class="btn-danger" onclick="toggleSetting('restart')">↻ Restart Application</button>
         </div>
     </div>
 
     <script>
+        let stationsInitialized = false;
+        let isDraggingVolume = false;
+
         function updateStatus() {
             fetch('/api/status')
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('clock').textContent = data.time || '--:--:--';
-                    document.getElementById('station').textContent = data.station || 'Stopped';
-                    document.getElementById('track').textContent = data.track || '';
+                    document.getElementById('date').textContent = data.date || '';
+                    document.getElementById('station').textContent = data.station ? `Playing: ${data.station}` : 'Radio Stopped';
+                    document.getElementById('track').textContent = data.track || (data.station ? 'Live stream' : 'No track info');
+
+                    const viewBadge = document.getElementById('viewBadge');
+                    viewBadge.textContent = `Screen: ${(data.view || 'clock').toUpperCase()}`;
+
+                    const alarmBadge = document.getElementById('alarmBadge');
+                    alarmBadge.textContent = data.alarm_enabled ? 'Alarms: ON' : 'Alarms: OFF';
+                    alarmBadge.className = 'badge' + (data.alarm_enabled ? ' active' : '');
+
+                    // Highlight active nav button
+                    const views = ['clock', 'news', 'radio', 'alarm', 'trains', 'weather', 'webcam'];
+                    views.forEach(v => {
+                        const btn = document.getElementById(`nav-${v}`);
+                        if (btn) {
+                            btn.classList.toggle('active-view', data.view === v);
+                        }
+                    });
+
+                    // Populate stations dropdown once
+                    if (!stationsInitialized && Array.isArray(data.stations)) {
+                        const select = document.getElementById('stationSelect');
+                        select.innerHTML = '<option value="">-- Play Station --</option>';
+                        data.stations.forEach(st => {
+                            const opt = document.createElement('option');
+                            opt.value = st;
+                            opt.textContent = st;
+                            select.appendChild(opt);
+                        });
+                        stationsInitialized = true;
+                    }
+                    if (data.station) {
+                        document.getElementById('stationSelect').value = data.station;
+                    }
+
+                    if (!isDraggingVolume && typeof data.volume === 'number') {
+                        document.getElementById('volumeSlider').value = data.volume;
+                        document.getElementById('volumeVal').textContent = `${data.volume}%`;
+                    }
                 })
                 .catch(err => console.error("Status update failed", err));
+        }
+
+        function playSelectedStation() {
+            const station = document.getElementById('stationSelect').value;
+            if (!station) return;
+            fetch('/api/play_station', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ station })
+            }).then(() => updateStatus());
+        }
+
+        function onVolumeInput(val) {
+            isDraggingVolume = true;
+            document.getElementById('volumeVal').textContent = `${val}%`;
+        }
+
+        function sendVolume(val) {
+            isDraggingVolume = false;
+            fetch('/api/volume', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ volume: Number(val) })
+            }).then(() => updateStatus());
         }
 
         function toggleSetting(setting) {
@@ -233,15 +391,12 @@
                 'restart': '/api/restart',
             };
 
-            fetch(endpoints[setting], {
-                method: 'POST'
-            })
+            fetch(endpoints[setting], { method: 'POST' })
                 .then(response => response.json())
                 .then(() => updateStatus())
                 .catch(err => console.error("Command failed", err));
         }
 
-        // Update status often for smooth clock
         updateStatus();
         setInterval(updateStatus, 1000);
     </script>

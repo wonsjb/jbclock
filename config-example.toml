@@ -8,33 +8,34 @@ volume = 50
 [radio]
 default_volume = 50
 streams = [
-    { name = "BBC Radio 1", uri = "http://as-hls-ww-live.akamaized.net/pool_900/live/ww/bbc_radio_one/bbc_radio_one.isml/bbc_radio_one-audio%3d96000.norewind.m3u8"},
+    { name = "BBC Radio 1", uri = "http://as-hls-ww-live.akamaized.net/pool_900/live/ww/bbc_radio_one/bbc_radio_one.isml/bbc_radio_one-audio%3d96000.norewind.m3u8" },
     { name = "BBC News", uri = "http://as-hls-uk-live.akamaized.net/pool_904/live/uk/audio_pop_up_01/audio_pop_up_01.isml/audio_pop_up_01-audio=320000.norewind.m3u8" },
-    { name = "Classic FM", uri = "http://media-ice.musicradio.com/ClassicFMMP3"},
-    { name = "Capital FM", uri = "http://media-ice.musicradio.com/CapitalMP3"},
-    { name = "Heart Radio", uri = "http://media-ice.musicradio.com/HeartLondonMP3"},
-    { name = "Jazz FM", "uri" = "http://edge-bauerall-01-gos2.sharp-stream.com/jazz.aac" },
-    { name = "Smooth Radio", uri = "http://media-ice.musicradio.com/SmoothUK"}
+    { name = "Classic FM", uri = "http://media-ice.musicradio.com/ClassicFMMP3" },
+    { name = "Capital FM", uri = "http://media-ice.musicradio.com/CapitalMP3" },
+    { name = "Heart Radio", uri = "http://media-ice.musicradio.com/HeartLondonMP3" },
+    { name = "Jazz FM", uri = "http://edge-bauerall-01-gos2.sharp-stream.com/jazz.aac" },
+    { name = "Smooth Radio", uri = "http://media-ice.musicradio.com/SmoothUK" }
 ]
 
 [news]
 sources = [
-    { type="rss", name = "BBC News", url = "http://feeds.bbci.co.uk/news/rss.xml" },
-    { type="api", api_key="<your api key<", name = "US News", url= "https://newsapi.org/v2/top-headlines", params={ country="us", category="general"}},
+    { type = "rss", name = "BBC News", url = "http://feeds.bbci.co.uk/news/rss.xml" },
+    { type = "api", api_key = "<your api key>", name = "US News", url = "https://newsapi.org/v2/top-headlines", params = { country = "us", category = "general" } },
 ]
 update_interval = 30  # minutes
 max_stories = 5
 
 [trains]
-home_station = "<your home station>"
-destination_station = "<Your destitation>"
+home_station = "<your home station CRS code, e.g. LBG>"
+destination_station = "<your destination station name, e.g. London Victoria>"
 api_key = "<your api key>"
 
 [weather]
-location="<Your location>"
-api_key="<your api key>"
+location = "<Your location>"
+api_key = "<your api key>"
 
 [webcam]
-enabled = true or false
+enabled = false
+camera_name = "Victor"
 url = "rtsp://<user>:<pass>@<ip:port>/h264Preview_01_sub"
-pin_code = "<pin code>"
+pin_code = "1234"

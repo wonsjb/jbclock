@@ -1,38 +1,54 @@
-import tomli
-import tomli_w
-from typing import List, Dict, Union, Optional
-from dataclasses import dataclass
-from datetime import datetime
+from __future__ import annotations
 
-@dataclass
+import logging
+import tomllib
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+import tomli_w
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass(slots=True)
 class RadioStream:
     name: str
     uri: str
 
-@dataclass
+
+@dataclass(slots=True)
 class NewsSource:
     type: str
     name: str
     url: str
-    api_key: Optional[str] = None
-    params: Optional[Dict] = None
+    api_key: str | None = None
+    params: dict[str, Any] = field(default_factory=dict)
+
 
 class SmartClockConfig:
-    def __init__(self, config_path: str):
-        """Initialize the configuration manager with the path to the TOML file."""
-        self.config_path = config_path
-        self.config = self._load_config()
+    """Manages reading, validating, and writing the TOML configuration."""
+
+    def __init__(self, config_path: str | Path = "config.toml") -> None:
+        self.config_path = Path(config_path)
+        if not self.config_path.is_absolute():
+            self.config_path = Path(__file__).resolve().parent / self.config_path
+        self.config: dict[str, Any] = self._load_config()
 
     def __str__(self) -> str:
         """Create a human-readable string representation of the configuration."""
-        sections = []
-        
+        sections: list[str] = []
+
         # Alarms section
+        weekday = self.get_weekday_alarms()
+        weekend = self.get_weekend_alarms()
         alarm_lines = [
             "ALARMS:",
             f"  Enabled: {self.get_alarms_enabled()}",
-            "  Weekday alarms: " + ", ".join(self.get_weekday_alarms()) if self.get_weekday_alarms() else "  Weekday alarms: None",
-            "  Weekend alarms: " + ", ".join(self.get_weekend_alarms()) if self.get_weekend_alarms() else "  Weekend alarms: None"
+            f"  Volume: {self.get_alarms_volume()}%",
+            f"  Weekday alarms: {', '.join(weekday) if weekday else 'None'}",
+            f"  Weekend alarms: {', '.join(weekend) if weekend else 'None'}",
         ]
         sections.append("\n".join(alarm_lines))
 
@@ -41,7 +57,7 @@ class SmartClockConfig:
         radio_lines = [
             "RADIO:",
             f"  Default volume: {self.get_radio_volume()}%",
-            "  Available stations:"
+            "  Available stations:",
         ]
         radio_lines.extend(f"    - {stream.name}" for stream in radio_streams)
         sections.append("\n".join(radio_lines))
@@ -52,7 +68,7 @@ class SmartClockConfig:
             "NEWS:",
             f"  Update interval: {self.get_news_update_interval()} minutes",
             f"  Max stories: {self.get_max_stories()}",
-            "  Sources:"
+            "  Sources:",
         ]
         news_lines.extend(f"    - {source.name} ({source.type})" for source in news_sources)
         sections.append("\n".join(news_lines))
@@ -63,206 +79,212 @@ class SmartClockConfig:
             "TRAINS:",
             f"  Home station: {home}",
             f"  Destination: {destination}",
-            "  Check times: " + ", ".join(self.get_train_check_times())
         ]
         sections.append("\n".join(train_lines))
 
         # Weather section
         weather_lines = [
             "WEATHER:",
-            f"  API key: {self.get_weather_api_key()}",
-            f"  Location: {self.get_weather_location()}"
+            f"  Location: {self.get_weather_location()}",
+            f"  API key configured: {bool(self.get_weather_api_key())}",
         ]
         sections.append("\n".join(weather_lines))
 
+        # Webcam section
+        webcam_lines = [
+            "WEBCAM:",
+            f"  Enabled: {self.is_webcam_enabled()}",
+            f"  PIN configured: {bool(self.get_webcam_pin())}",
+        ]
+        sections.append("\n".join(webcam_lines))
+
         return "\n\n".join(sections)
 
-    def _load_config(self) -> Dict:
+    def _load_config(self) -> dict[str, Any]:
         """Load the configuration from the TOML file."""
-        try:
-            with open(self.config_path, "rb") as f:
-                return tomli.load(f)
-        except FileNotFoundError:
+        if not self.config_path.exists():
             raise FileNotFoundError(f"Configuration file not found at {self.config_path}")
+        try:
+            with self.config_path.open("rb") as f:
+                return tomllib.load(f)
         except Exception as e:
-            raise Exception(f"Error loading configuration: {str(e)}")
+            raise RuntimeError(f"Error loading configuration from {self.config_path}: {e}") from e
 
     def save_config(self) -> None:
         """Save the current configuration back to the TOML file."""
         try:
-            with open(self.config_path, "wb") as f:
+            with self.config_path.open("wb") as f:
                 tomli_w.dump(self.config, f)
         except Exception as e:
-            raise Exception(f"Error saving configuration: {str(e)}")
+            logger.error("Error saving configuration: %s", e)
+            raise RuntimeError(f"Error saving configuration: {e}") from e
 
     # Alarm Methods
-    def get_weekday_alarms(self) -> List[str]:
-        """Get list of weekday alarm times."""
-        return self.config["alarms"]["weekday"]
+    def get_weekday_alarms(self) -> list[str]:
+        return list(self.config.get("alarms", {}).get("weekday", []))
 
-    def get_weekend_alarms(self) -> List[str]:
-        """Get list of weekend alarm times."""
-        return self.config["alarms"]["weekend"]
+    def get_weekend_alarms(self) -> list[str]:
+        return list(self.config.get("alarms", {}).get("weekend", []))
 
-    def set_weekday_alarms(self, alarms: List[str]) -> None:
-        """Set weekday alarm times."""
+    def set_weekday_alarms(self, alarms: list[str]) -> None:
         self._validate_time_list(alarms)
-        self.config["alarms"]["weekday"] = alarms
+        self.config.setdefault("alarms", {})["weekday"] = alarms
 
-    def set_weekend_alarms(self, alarms: List[str]) -> None:
-        """Set weekend alarm times."""
+    def set_weekend_alarms(self, alarms: list[str]) -> None:
         self._validate_time_list(alarms)
-        self.config["alarms"]["weekend"] = alarms
+        self.config.setdefault("alarms", {})["weekend"] = alarms
 
     def get_alarms_enabled(self) -> bool:
-        """Check if alarms are enabled."""
-        return self.config["alarms"]["enabled"]
+        return bool(self.config.get("alarms", {}).get("enabled", False))
 
     def set_alarms_enabled(self, enabled: bool) -> None:
-        """Enable or disable alarms."""
-        self.config["alarms"]["enabled"] = enabled
+        self.config.setdefault("alarms", {})["enabled"] = bool(enabled)
 
     def get_alarms_volume(self) -> int:
-        """Get the alarm volume."""
-        return self.config["alarms"]["volume"]
+        return int(self.config.get("alarms", {}).get("volume", 50))
 
-    def set_alarms_volumes(self, volume: int) -> None:
-        """Set the alarm volume."""
-        self.config["alarms"]["volume"] = int
+    def set_alarms_volume(self, volume: int) -> None:
+        if not 0 <= volume <= 100:
+            raise ValueError("Volume must be between 0 and 100")
+        self.config.setdefault("alarms", {})["volume"] = int(volume)
+
+    # Keep backwards-compatible alias just in case
+    set_alarms_volumes = set_alarms_volume
 
     # Radio Methods
     def get_radio_volume(self) -> int:
-        """Get the default radio volume."""
-        return self.config["radio"]["default_volume"]
+        return int(self.config.get("radio", {}).get("default_volume", 50))
 
     def set_radio_volume(self, volume: int) -> None:
-        """Set the default radio volume."""
         if not 0 <= volume <= 100:
             raise ValueError("Volume must be between 0 and 100")
-        self.config["radio"]["default_volume"] = volume
+        self.config.setdefault("radio", {})["default_volume"] = int(volume)
 
-    def get_radio_streams(self) -> List[RadioStream]:
-        """Get list of radio streams."""
-        return [RadioStream(**stream) for stream in self.config["radio"]["streams"]]
+    def get_radio_streams(self) -> list[RadioStream]:
+        streams = self.config.get("radio", {}).get("streams", [])
+        return [RadioStream(name=s["name"], uri=s["uri"]) for s in streams]
 
     def add_radio_stream(self, name: str, uri: str) -> None:
-        """Add a new radio stream."""
-        self.config["radio"]["streams"].append({"name": name, "uri": uri})
+        self.config.setdefault("radio", {}).setdefault("streams", []).append(
+            {"name": name, "uri": uri}
+        )
 
     def remove_radio_stream(self, name: str) -> None:
-        """Remove a radio stream by name."""
-        self.config["radio"]["streams"] = [
-            stream for stream in self.config["radio"]["streams"]
-            if stream["name"] != name
+        streams = self.config.get("radio", {}).get("streams", [])
+        self.config.setdefault("radio", {})["streams"] = [
+            s for s in streams if s.get("name") != name
         ]
 
     # News Methods
-    def get_news_sources(self) -> List[NewsSource]:
-        """Get list of news sources."""
-        return [NewsSource(**source) for source in self.config["news"]["sources"]]
+    def get_news_sources(self) -> list[NewsSource]:
+        sources = self.config.get("news", {}).get("sources", [])
+        result: list[NewsSource] = []
+        for s in sources:
+            result.append(
+                NewsSource(
+                    type=s["type"],
+                    name=s["name"],
+                    url=s["url"],
+                    api_key=s.get("api_key"),
+                    params=dict(s.get("params") or {}),
+                )
+            )
+        return result
 
     def add_news_source(self, source: NewsSource) -> None:
-        """Add a new news source."""
-        source_dict = {
+        source_dict: dict[str, Any] = {
             "type": source.type,
             "name": source.name,
-            "url": source.url
+            "url": source.url,
         }
         if source.api_key:
             source_dict["api_key"] = source.api_key
         if source.params:
             source_dict["params"] = source.params
-        self.config["news"]["sources"].append(source_dict)
+        self.config.setdefault("news", {}).setdefault("sources", []).append(source_dict)
 
     def remove_news_source(self, name: str) -> None:
-        """Remove a news source by name."""
-        self.config["news"]["sources"] = [
-            source for source in self.config["news"]["sources"]
-            if source["name"] != name
+        sources = self.config.get("news", {}).get("sources", [])
+        self.config.setdefault("news", {})["sources"] = [
+            s for s in sources if s.get("name") != name
         ]
 
     def get_news_update_interval(self) -> int:
-        """Get news update interval in minutes."""
-        return self.config["news"]["update_interval"]
+        return int(self.config.get("news", {}).get("update_interval", 30))
 
     def set_news_update_interval(self, interval: int) -> None:
-        """Set news update interval in minutes."""
         if interval < 1:
             raise ValueError("Update interval must be at least 1 minute")
-        self.config["news"]["update_interval"] = interval
+        self.config.setdefault("news", {})["update_interval"] = int(interval)
 
     def get_max_stories(self) -> int:
-        """Get maximum number of news stories."""
-        return self.config["news"]["max_stories"]
+        return int(self.config.get("news", {}).get("max_stories", 5))
 
     def set_max_stories(self, max_stories: int) -> None:
-        """Set maximum number of news stories."""
         if max_stories < 1:
             raise ValueError("Max stories must be at least 1")
-        self.config["news"]["max_stories"] = max_stories
+        self.config.setdefault("news", {})["max_stories"] = int(max_stories)
 
     # Train Methods
     def get_train_stations(self) -> tuple[str, str]:
-        """Get home and destination stations."""
+        trains = self.config.get("trains", {})
         return (
-            self.config["trains"]["home_station"],
-            self.config["trains"]["destination_station"]
+            trains.get("home_station", ""),
+            trains.get("destination_station", ""),
         )
 
     def set_train_stations(self, home: str, destination: str) -> None:
-        """Set home and destination stations."""
-        self.config["trains"]["home_station"] = home
-        self.config["trains"]["destination_station"] = destination
+        trains = self.config.setdefault("trains", {})
+        trains["home_station"] = home
+        trains["destination_station"] = destination
 
     def get_train_api_key(self) -> str:
-        """Get transport API key."""
-        return self.config["trains"]["api_key"]
+        return str(self.config.get("trains", {}).get("api_key", ""))
 
     def set_train_api_key(self, api_key: str) -> None:
-        """Set transport API key."""
-        self.config["trains"]["api_key"] = api_key
+        self.config.setdefault("trains", {})["api_key"] = api_key
 
+    # Weather Methods
     def get_weather_location(self) -> str:
-        """Get weather location."""
-        return self.config["weather"]["location"]
+        return str(self.config.get("weather", {}).get("location", ""))
 
     def set_weather_location(self, location: str) -> None:
-        """Set weather location."""
-        self.config["weather"]["location"] = location
+        self.config.setdefault("weather", {})["location"] = location
 
     def get_weather_api_key(self) -> str:
-        """Get weather API key."""
-        return self.config["weather"]["api_key"]
+        return str(self.config.get("weather", {}).get("api_key", ""))
 
     def set_weather_api_key(self, api_key: str) -> None:
-        """Set weather API key."""
-        self.config["weather"]["api_key"] = api_key
+        self.config.setdefault("weather", {})["api_key"] = api_key
 
     @staticmethod
-    def _validate_time_list(times: List[str]) -> None:
-        """Validate a list of time strings in HH:MM format."""
+    def _validate_time_list(times: list[str]) -> None:
         for time_str in times:
             try:
                 datetime.strptime(time_str, "%H:%M")
-            except ValueError:
-                raise ValueError(f"Invalid time format: {time_str}. Use HH:MM format")
+            except ValueError as e:
+                raise ValueError(f"Invalid time format: {time_str}. Use HH:MM format") from e
 
     # Webcam Methods
     def get_webcam_url(self) -> str:
-        """Get webcam RTSP URL."""
-        return self.config.get("webcam", {}).get("url", "")
+        return str(self.config.get("webcam", {}).get("url", ""))
+
+    def set_webcam_url(self, url: str) -> None:
+        self.config.setdefault("webcam", {})["url"] = url
+
+    def get_webcam_camera_name(self) -> str:
+        return str(self.config.get("webcam", {}).get("camera_name", "Victor"))
 
     def is_webcam_enabled(self) -> bool:
-        """Check if webcam is enabled."""
-        return self.config.get("webcam", {}).get("enabled", False)
+        return bool(self.config.get("webcam", {}).get("enabled", False))
 
     def get_webcam_pin(self) -> str:
-        """Get webcam PIN code."""
-        return self.config.get("webcam", {}).get("pin_code", "")
+        return str(self.config.get("webcam", {}).get("pin_code", ""))
 
-def main():
+
+def main() -> None:
     config = SmartClockConfig("config.toml")
-    print(str(config))
+    print(config)
 
 
 if __name__ == "__main__":

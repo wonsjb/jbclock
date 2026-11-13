@@ -1,30 +1,32 @@
+from __future__ import annotations
+
+import logging
+from typing import Any
+
 import requests
-from typing import List, Dict
 from config import NewsSource
 
+logger = logging.getLogger(__name__)
+
+
 class ApiNewsFetcher:
-    def __init__(self, config: NewsSource, page_size: int):
-        """Initialize NewsFetcher with your API key from NewsAPI.org"""
-        self.api_key = config.api_key
+    """Fetches news headlines from NewsAPI.org."""
+
+    def __init__(self, config: NewsSource, page_size: int = 5) -> None:
+        self.api_key = config.api_key or ""
         self.url = config.url
-        self.params = dict(config.params)
-        self.params['pageSize'] = page_size
+        self.params: dict[str, Any] = dict(config.params or {})
+        self.params["pageSize"] = page_size
         self.headers = {"Authorization": f"Bearer {self.api_key}"}
 
-    def get_top_headlines(
-        self,
-    ) -> List[Dict]:
-        """
-        Fetch top headlines based on parameters
-        
-        Args:
-            country: 2-letter ISO 3166-1 country code
-            category: Category of news (business, entertainment, general, health, science, sports, technology)
-            query: Keywords or phrases to search for
-            page_size: Number of results to return (max 100)
-        """
-        
-        response = requests.get(self.url, headers=self.headers, params=self.params)
+    def get_top_headlines(self) -> list[dict[str, Any]]:
+        """Fetch top headlines based on configured parameters."""
+        response = requests.get(
+            self.url,
+            headers=self.headers,
+            params=self.params,
+            timeout=10,
+        )
         response.raise_for_status()
-        
-        return response.json()["articles"]
+        data = response.json()
+        return list(data.get("articles", []))

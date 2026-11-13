@@ -1,4 +1,5 @@
 config.toml
-__pycache__
-.python-version
-uv.lock
+__pycache__/
+.venv/
+*.egg-info/
+*.pyc
